@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowDown, Linkedin, Github, Mail, Cloud, Loader2 } from "lucide-react"
+import { ArrowDown, Linkedin, Github, Mail, Cloud, Loader2, Users, Activity } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
 
@@ -14,28 +14,52 @@ interface StatusData {
   message?: string;
 }
 
+interface CounterData {
+  visits: number;
+  requests: number;
+}
+
 export function Hero() {
   const [statusData, setStatusData] = useState<StatusData | null>(null);
+  const [counterData, setCounterData] = useState<CounterData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 데이터 가져오기 함수
+  const fetchData = async () => {
+    try {
+      // 1. 상태 가져오기
+      const statusRes = await fetch(`${API_URL}/api/status`);
+      const statusJson = await statusRes.json();
+      setStatusData(statusJson);
+
+      // 2. 카운터 가져오기
+      const counterRes = await fetch(`${API_URL}/api/counter`);
+      const counterJson = await counterRes.json();
+      setCounterData(counterJson);
+      
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setStatusData({ service: "Unknown", region: "Unknown", status: "Error", message: "API Error" });
+      setLoading(false);
+    }
+  };
+
+  // 방문자 수 증가 함수
+  const handleIncrement = async () => {
+    try {
+      await fetch(`${API_URL}/api/counter/increment`, { method: 'POST' });
+      fetchData(); // 데이터 다시 불러오기 (새로고침 효과)
+    } catch (err) {
+      console.error("Increment failed", err);
+    }
+  };
+
   useEffect(() => {
-    fetch(`${API_URL}/api/status`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then((data) => {
-        setStatusData(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch status:", err);
-        setStatusData({ service: "Unknown", region: "Unknown", status: "Error", message: "API Connection Failed" });
-        setLoading(false);
-      });
+    fetchData();
   }, []);
 
-  // 상태에 따른 UI 결정
+  // 상태 UI 렌더링
   let statusContent;
   if (loading) {
     statusContent = (
@@ -46,22 +70,32 @@ export function Hero() {
     );
   } else if (statusData?.status === "Active") {
     statusContent = (
-      <div className="flex items-center justify-center gap-2 mb-4 text-green-600 bg-green-100/50 py-1 px-3 rounded-full w-fit mx-auto">
-        <Cloud className="h-5 w-5" />
-        <p className="text-sm font-medium">
-          클러스터 정상 작동 (Active) | Region: {statusData.region}
-        </p>
+      <div className="flex flex-col gap-3 mb-8">
+        {/* 클러스터 상태 */}
+        <div className="flex items-center justify-center gap-2 text-green-600 bg-green-100/50 py-1 px-3 rounded-full w-fit mx-auto">
+          <Cloud className="h-5 w-5" />
+          <p className="text-sm font-medium">
+            {statusData.region} | {statusData.status}
+          </p>
+        </div>
+
+        {/* 카운터 통계 (새로 추가된 부분) */}
+        {counterData && (
+          <div className="flex justify-center gap-4 text-sm font-medium text-muted-foreground">
+            <div className="flex items-center gap-1 bg-secondary/50 px-3 py-1 rounded-md">
+              <Users className="h-4 w-4" />
+              <span>방문자: {counterData.visits}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-secondary/50 px-3 py-1 rounded-md">
+              <Activity className="h-4 w-4" />
+              <span>API 요청: {counterData.requests}</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   } else {
-    statusContent = (
-      <div className="flex items-center justify-center gap-2 mb-4 text-red-500">
-        <Cloud className="h-5 w-5" />
-        <p className="text-sm font-medium">
-          백엔드 연결 실패 ({statusData?.message})
-        </p>
-      </div>
-    );
+    statusContent = <div className="text-red-500 mb-4">API 연결 실패</div>;
   }
 
   return (
@@ -69,7 +103,7 @@ export function Hero() {
       <div className="max-w-4xl mx-auto text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
           
-          {/* 동적 상태 표시 영역 */}
+          {/* 상태 및 카운터 표시 */}
           {statusContent}
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground mb-6 text-balance">
@@ -78,32 +112,20 @@ export function Hero() {
           <p className="text-xl sm:text-2xl text-muted-foreground mb-4">김서준 (Seojoon Kim)</p>
           
           <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
-            <Button size="lg" asChild><a href="#contact">연락하기</a></Button>
-            <Button size="lg" variant="outline" asChild><a href="#projects">프로젝트 보기</a></Button>
+            {/* 방문자 증가 버튼 (새로 추가됨) */}
+            <Button size="lg" onClick={handleIncrement} className="bg-blue-600 hover:bg-blue-700">
+              방문자 수 올리기 (+1)
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <a href="#projects">프로젝트 보기</a>
+            </Button>
           </div>
 
           <div className="flex items-center justify-center gap-6">
-            <a href="https://www.linkedin.com/in/selffish234" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-              <Linkedin className="h-6 w-6" />
-            </a>
             <a href="https://github.com/selffish234" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
               <Github className="h-6 w-6" />
             </a>
-            <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
-              <Mail className="h-6 w-6" />
-            </a>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
-          <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowDown className="h-6 w-6 animate-bounce" />
-          </a>
         </motion.div>
       </div>
     </section>
