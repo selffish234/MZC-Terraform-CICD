@@ -80,8 +80,11 @@ resource "aws_cloudfront_distribution" "this" {
     acm_certificate_arn = aws_acm_certificate_validation.frontend.certificate_arn
     ssl_support_method  = "sni-only"
   }
-  restrictions { geo_restriction { restriction_type = "none" } }
-  tags = { Name = "${var.prefix}-cloudfront" }
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }tags = { Name = "${var.prefix}-cloudfront" }
 }
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.this.zone_id
