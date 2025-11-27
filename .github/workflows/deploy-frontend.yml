@@ -1,4 +1,5 @@
 name: Deploy Frontend (Prod)
+
 on:
   push:
     branches: ["main"]
@@ -8,8 +9,7 @@ on:
 env:
   AWS_REGION: eu-west-1
   S3_BUCKET: www.selffish234.cloud
-  # 주의: Terraform Apply가 완료된 후 Output에 나온 CloudFront ID를 여기에 꼭 채워넣어야 캐시 무효화가 작동합니다.
-  CLOUDFRONT_ID: "" 
+  # CLOUDFRONT_ID는 이제 삭제합니다 (자동으로 찾을 것입니다)
 
 jobs:
   deploy:
@@ -26,7 +26,6 @@ jobs:
 
       - name: Build Next.js
         env:
-          # Prod 환경의 백엔드 주소를 주입합니다.
           NEXT_PUBLIC_API_URL: https://api.selffish234.cloud
         run: |
           cd apps/frontend
@@ -43,7 +42,17 @@ jobs:
         run: |
           aws s3 sync apps/frontend/out s3://${{ env.S3_BUCKET }} --delete
 
-      - name: Invalidate CloudFront
-        if: env.CLOUDFRONT_ID != ''
+      # [핵심 변경] AWS CLI로 ID를 직접 찾아서 캐시 무효화 실행
+      - name: Invalidate CloudFront Dynamic
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_ID }} --paths "/*"
+          # 1. 도메인 이름(S3_BUCKET)을 쓰는 CloudFront ID 찾기
+          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items!=null] | [?contains(Aliases.Items, '${{ env.S3_BUCKET }}')].Id | [0]" --output text)
+          
+          echo "Found CloudFront Distribution ID: $DIST_ID"
+          
+          # 2. 찾은 ID로 무효화 실행 (ID가 있을 때만)
+          if [ "$DIST_ID" != "None" ] && [ -n "$DIST_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+          else
+            echo "CloudFront Distribution not found for domain ${{ env.S3_BUCKET }}. Skipping invalidation."
+          fi
