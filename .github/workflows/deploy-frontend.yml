@@ -30,7 +30,7 @@ jobs:
           NEXT_PUBLIC_API_URL: https://api.selffish234.cloud
         run: |
           cd apps/frontend
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
 
       - uses: aws-actions/configure-aws-credentials@v4
