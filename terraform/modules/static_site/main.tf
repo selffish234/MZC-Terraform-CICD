@@ -84,7 +84,8 @@ resource "aws_cloudfront_distribution" "this" {
     geo_restriction {
       restriction_type = "none"
     }
-  }tags = { Name = "${var.prefix}-cloudfront" }
+  }
+  tags = { Name = "${var.prefix}-cloudfront" }
 }
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.this.zone_id
