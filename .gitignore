@@ -1,0 +1,11 @@
+.DS_Store
+.terraform/
+*.tfstate
+*.tfstate.backup
+node_modules/
+.env
+.next/
+out/
+build/
+dist/
+coverage/
