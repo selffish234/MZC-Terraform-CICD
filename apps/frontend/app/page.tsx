@@ -1,23 +1,23 @@
 import { Hero } from "@/components/hero"
+import { About } from "@/components/about"
+import { Experience } from "@/components/experience"
+import { Projects } from "@/components/projects"
+import { Certifications } from "@/components/certifications"
+import { Contact } from "@/components/contact"
+import { Navigation } from "@/components/navigation"
+import { Volunteer } from "@/components/volunteer"
 
-// 환경 변수 처리 (빌드 시점에 주입됨)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
-async function getPortfolioStatus() {
-  try {
-    const response = await fetch(`${API_URL}/api/status`, { cache: 'no-store' });
-    if (!response.ok) return { status: "Error", message: "Fetch failed", region: "Unknown", service: "Unknown" };
-    return await response.json();
-  } catch (error) {
-    return { status: "Error", message: "Connection failed", region: "Unknown", service: "Unknown" };
-  }
-}
-
-export default async function Home() {
-  const statusData = await getPortfolioStatus();
+export default function Home() {
   return (
     <main className="min-h-screen bg-background">
-      <Hero statusData={statusData} />
+      <Navigation />
+      <Hero />
+      <About />
+      <Experience />
+      <Projects />
+      <Volunteer />
+      <Certifications />
+      <Contact />
     </main>
   )
 }

@@ -65,7 +65,7 @@ data "aws_route53_zone" "this" {
 # 이를 위해 prefix가 prod가 아니면 subdomain 생성 로직이 필요하나,
 # 간단하게 여기서는 변수로 받은 domain_name을 그대로 사용 (외부에서 조합해서 주입)
 resource "aws_acm_certificate" "api" {
-  domain_name       = "api-${var.prefix}.${var.domain_name}"
+  domain_name       = "api.${var.domain_name}"
   validation_method = "DNS"
   lifecycle { create_before_destroy = true }
   tags = { Name = "${var.prefix}-api-cert" }
@@ -164,7 +164,7 @@ resource "aws_ecs_service" "this" {
 }
 resource "aws_route53_record" "api" {
   zone_id = data.aws_route53_zone.this.zone_id
-  name    = "api-${var.prefix}.${var.domain_name}"
+  name    = "api.${var.domain_name}"
   type    = "A"
   alias {
     name                   = aws_lb.this.dns_name

@@ -1,5 +1,4 @@
 name: Deploy Frontend (Prod)
-
 on:
   push:
     branches: ["main"]
@@ -9,7 +8,7 @@ on:
 env:
   AWS_REGION: eu-west-1
   S3_BUCKET: www.selffish234.cloud
-  # CLOUDFRONT_ID는 삭제했습니다 (자동으로 찾을 것입니다)
+  # CLOUDFRONT_ID 삭제 (자동 감지)
 
 jobs:
   deploy:
@@ -42,17 +41,12 @@ jobs:
         run: |
           aws s3 sync apps/frontend/out s3://${{ env.S3_BUCKET }} --delete
 
-      # [수정된 부분] 조건문(if)을 없애고, 스크립트 안에서 ID를 직접 찾도록 변경
       - name: Invalidate CloudFront Dynamic
         run: |
-          # 1. 도메인 이름(S3_BUCKET)을 사용하는 CloudFront ID 찾기
           DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items!=null] | [?contains(Aliases.Items, '${{ env.S3_BUCKET }}')].Id | [0]" --output text)
-          
-          echo "Found CloudFront Distribution ID: $DIST_ID"
-          
-          # 2. 찾은 ID로 무효화 실행
+          echo "Found CloudFront ID: $DIST_ID"
           if [ "$DIST_ID" != "None" ] && [ -n "$DIST_ID" ]; then
             aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
           else
-            echo "CloudFront Distribution not found. Skipping."
+            echo "CloudFront ID not found. Skipping."
           fi
